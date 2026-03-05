@@ -316,7 +316,8 @@
     .gallery-item img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain;
+      object-position: center;
       filter: sepia(20%) contrast(1.05);
       transition: transform 0.4s ease, filter 0.4s ease;
     }
@@ -370,27 +371,6 @@
       letter-spacing: 1px;
       text-align: center;
       outline: none;
-    }
-
-    .delete-btn {
-      position: absolute;
-      top: 6px;
-      right: 6px;
-      background: rgba(42, 31, 20, 0.7);
-      color: var(--cream);
-      border: none;
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      cursor: pointer;
-      font-size: 13px;
-      display: none;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .gallery-item:hover .delete-btn {
-      display: flex;
     }
 
     /* CONTACT */
@@ -468,24 +448,78 @@
       display: flex;
     }
 
-    #lightbox img {
-      max-width: 90vw;
-      max-height: 85vh;
-      object-fit: contain;
-      border: 1px solid var(--sepia);
-      filter: sepia(15%);
+    @keyframes growUpIframe {
+      from {
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
     }
 
-    #lightbox .close-lb {
-      position: absolute;
-      top: 24px;
-      right: 32px;
-      color: var(--sepia);
-      font-size: 32px;
-      cursor: pointer;
-      font-family: 'Playfair Display', serif;
+    .iframe-container {
+      background: var(--parchment);
+      border: 2px solid var(--sepia);
+      border-radius: 8px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      max-width: 90vw;
+      max-height: 85vh;
+    }
+
+    .iframe-header {
+      background: var(--sepia);
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .iframe-dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .iframe-header .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--parchment);
+      opacity: 0.7;
+    }
+
+    .close-lb {
       background: none;
       border: none;
+      color: var(--parchment);
+      font-size: 16px;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+      opacity: 0.7;
+      transition: opacity 0.2s ease;
+    }
+
+    .close-lb:hover {
+      opacity: 1;
+    }
+
+    .iframe-container img {
+      width: 100%;
+      height: 100%;
+      max-height: calc(85vh - 30px);
+      object-fit: contain;
+      background: var(--dark);
+      filter: sepia(10%);
+    }
+
+    #lightbox.active .iframe-container {
+      animation: growUpIframe 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
     }
 
     @media (max-width: 640px) {
@@ -1124,8 +1158,17 @@
 
   <!-- LIGHTBOX -->
   <div id="lightbox">
-    <button class="close-lb" onclick="closeLb()">✕</button>
-    <img id="lbImg" src="" alt="" />
+    <div class="iframe-container">
+      <div class="iframe-header">
+        <div class="iframe-dots">
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+        </div>
+        <button class="close-lb" onclick="closeLb()">✕</button>
+      </div>
+      <img id="lbImg" src="" alt="" />
+    </div>
   </div>
 
   <script>
@@ -1156,9 +1199,8 @@
         div.innerHTML = `
         <img src="${item.src}" alt="${item.caption || ''}"/>
         <div class="overlay"></div>
-        <button class="delete-btn" onclick="deleteItem(${idx})">✕</button>
       `;
-        div.querySelector('img').addEventListener('click', () => openLb(item.src));
+        div.querySelector('.overlay').addEventListener('click', () => openLb(item.src));
         const cap = document.createElement('input');
         cap.className = 'gallery-caption-input';
         cap.placeholder = 'Add a title…';
@@ -1169,11 +1211,6 @@
       });
     }
 
-    function deleteItem(idx) {
-      galleryItems.splice(idx, 1);
-      renderGallery();
-    }
-
     // Gallery images are added manually in the galleryItems array above
 
     // ── LIGHTBOX ──
@@ -1181,12 +1218,10 @@
       document.getElementById('lbImg').src = src;
       document.getElementById('lightbox').classList.add('active');
     }
+
     function closeLb() {
       document.getElementById('lightbox').classList.remove('active');
     }
-    document.getElementById('lightbox').addEventListener('click', function (e) {
-      if (e.target === this) closeLb();
-    });
 
     renderGallery();
 
